@@ -1,0 +1,13 @@
+{
+  "name": "gesture_controlled_robot (ROS 2 Jazzy)",
+  "dockerComposeFile": ["../docker/docker-compose.yml"],
+  "service": "dev",
+  "workspaceFolder": "/ws",
+  "shutdownAction": "stopCompose",
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-python.python", "charliermarsh.ruff", "ms-iot.vscode-ros"]
+    }
+  },
+  "postCreateCommand": "colcon build --symlink-install"
+}

@@ -1,0 +1,38 @@
+# dev  : headless shell for this VM and CI (no camera, no display).
+# demo : laptop/desktop with webcam + X11 for the live demo.
+x-common: &common
+  build:
+    context: ..
+    dockerfile: docker/Dockerfile
+    args:
+      UID: ${UID:-1000}
+      GID: ${GID:-1000}
+  image: gesture_controlled_robot:jazzy
+  network_mode: host
+  ipc: host
+  working_dir: /ws
+  volumes:
+    - ..:/ws
+  environment:
+    - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-7}
+    - TURTLEBOT3_MODEL=burger
+  stdin_open: true
+  tty: true
+
+services:
+  dev:
+    <<: *common
+
+  demo:
+    <<: *common
+    environment:
+      - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-7}
+      - TURTLEBOT3_MODEL=burger
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+    volumes:
+      - ..:/ws
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    devices:
+      - /dev/video0:/dev/video0
+    privileged: false

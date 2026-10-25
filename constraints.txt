@@ -1,0 +1,2 @@
+# Keep the Ubuntu 24.04 numpy (1.26.x); cv_bridge and other ROS python bindings are built against it.
+numpy<2
