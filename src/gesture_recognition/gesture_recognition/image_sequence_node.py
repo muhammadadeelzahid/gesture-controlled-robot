@@ -21,13 +21,13 @@ IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".bmp"}
 class ImageSequenceNode(Node):
     def __init__(self) -> None:
         super().__init__("image_sequence_node")
-        self.declare_parameter("images", [""])  # files and/or directories
+        self.declare_parameter("images", "")  # comma separated files and/or directories
         self.declare_parameter("rate_hz", 15.0)
         self.declare_parameter("hold_s", 3.0)
         self.declare_parameter("loop", True)
         self.declare_parameter("width", 640)
 
-        paths = [p for p in self.get_parameter("images").value if p]
+        paths = [p.strip() for p in self.get_parameter("images").value.split(",") if p.strip()]
         self.files = sorted(self._expand(paths))
         if not self.files:
             raise RuntimeError(f"no images found in {paths}")

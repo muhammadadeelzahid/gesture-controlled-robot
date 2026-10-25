@@ -39,7 +39,7 @@ def generate_test_description():
         launch_ros.actions.Node(
             package="gesture_recognition",
             executable="image_sequence_node",
-            parameters=[{"images": [IMAGES], "hold_s": HOLD_S, "rate_hz": 10.0}],
+            parameters=[{"images": IMAGES, "hold_s": HOLD_S, "rate_hz": 10.0}],
         ),
         launch_ros.actions.Node(
             package="gesture_recognition",

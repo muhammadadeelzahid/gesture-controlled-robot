@@ -8,9 +8,9 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
-from launch.conditions import IfCondition, LaunchConfigurationEquals
+from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import EqualsSubstitution, LaunchConfiguration
 from launch_ros.actions import Node
 
 
@@ -42,14 +42,14 @@ def generate_launch_description():
                 PythonLaunchDescriptionSource(
                     os.path.join(control_share, "launch", "camera.launch.py")
                 ),
-                condition=LaunchConfigurationEquals("source", "camera"),
+                condition=IfCondition(EqualsSubstitution(LaunchConfiguration("source"), "camera")),
             ),
             Node(
                 package="gesture_recognition",
                 executable="image_sequence_node",
                 name="image_sequence_node",
-                condition=LaunchConfigurationEquals("source", "images"),
-                parameters=[{"images": [LaunchConfiguration("images")], "hold_s": 4.0}],
+                condition=IfCondition(EqualsSubstitution(LaunchConfiguration("source"), "images")),
+                parameters=[{"images": LaunchConfiguration("images"), "hold_s": 4.0}],
                 output="screen",
             ),
             IncludeLaunchDescription(
