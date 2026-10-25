@@ -14,4 +14,4 @@ gesture_classifier_node:
     labels_path: ""            # custom only
     window: 7                  # majority vote window (frames)
     min_votes: 5
-    min_confidence: 0.8
+    min_confidence: 0.6        # MediaPipe gesture scores on real frames sit around 0.6 to 0.9

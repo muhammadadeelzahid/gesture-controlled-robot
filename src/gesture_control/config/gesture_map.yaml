@@ -4,7 +4,7 @@ gesture_to_cmd_vel_node:
     frame_id: base_link
     publish_rate_hz: 20.0
     deadman_timeout_s: 0.5     # zero velocity if no /gesture within this window
-    min_confidence: 0.8
+    min_confidence: 0.5        # second gate; the classifier already filters at 0.6
     max_linear: 0.22           # TurtleBot3 burger limits
     max_angular: 2.84
     linear_accel: 0.5          # m/s^2 ramp limit
