@@ -1,11 +1,14 @@
-"""Full stack: camera + recognition + gesture_to_cmd_vel (+ sim unless sim:=false)."""
+"""Full stack: image source + recognition + gesture_to_cmd_vel (+ sim unless sim:=false).
+
+source:=camera uses usb_cam; source:=images images:=<dir> cycles still images instead.
+"""
 
 import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
-from launch.conditions import IfCondition
+from launch.conditions import IfCondition, LaunchConfigurationEquals
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
@@ -21,7 +24,12 @@ def generate_launch_description():
                 "recognizer", default_value="mediapipe", description="mediapipe | custom"
             ),
             DeclareLaunchArgument("sim", default_value="true"),
-            DeclareLaunchArgument("camera", default_value="true"),
+            DeclareLaunchArgument("source", default_value="camera", description="camera | images"),
+            DeclareLaunchArgument(
+                "images",
+                default_value="",
+                description="image files or directories for source:=images",
+            ),
             DeclareLaunchArgument("headless", default_value="false"),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
@@ -34,7 +42,15 @@ def generate_launch_description():
                 PythonLaunchDescriptionSource(
                     os.path.join(control_share, "launch", "camera.launch.py")
                 ),
-                condition=IfCondition(LaunchConfiguration("camera")),
+                condition=LaunchConfigurationEquals("source", "camera"),
+            ),
+            Node(
+                package="gesture_recognition",
+                executable="image_sequence_node",
+                name="image_sequence_node",
+                condition=LaunchConfigurationEquals("source", "images"),
+                parameters=[{"images": [LaunchConfiguration("images")], "hold_s": 4.0}],
+                output="screen",
             ),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
