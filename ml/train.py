@@ -14,17 +14,25 @@ import numpy as np
 from common import FEATURE_DIM, LABELS, MODELS_DIR
 
 
-def load(paths: list[str]) -> tuple[np.ndarray, np.ndarray]:
+def load(paths: list[str], labels: list[str] = LABELS) -> tuple[np.ndarray, np.ndarray]:
     xs, ys = [], []
     for path in paths:
         for row in np.loadtxt(path, delimiter=",", dtype=str, ndmin=2):
-            if row[0] not in LABELS:
+            if row[0] not in labels:
                 continue
-            ys.append(LABELS.index(row[0]))
+            ys.append(labels.index(row[0]))
             xs.append(row[1:].astype(np.float32))
     x = np.stack(xs)
     assert x.shape[1] == FEATURE_DIM, x.shape
     return x, np.asarray(ys)
+
+
+def present_labels(paths: list[str]) -> list[str]:
+    """Labels that actually occur in the CSVs, in LABELS order."""
+    seen = set()
+    for path in paths:
+        seen.update(np.loadtxt(path, delimiter=",", dtype=str, ndmin=2)[:, 0].tolist())
+    return [label for label in LABELS if label in seen]
 
 
 def augment(x: np.ndarray, rng: np.random.Generator) -> np.ndarray:
@@ -53,7 +61,9 @@ def main() -> None:
     from sklearn.model_selection import train_test_split
 
     paths = [p for pat in args.csv for p in glob.glob(pat)]
-    x, y = load(paths)
+    labels = present_labels(paths)
+    print("classes:", labels)
+    x, y = load(paths, labels)
     x_tr, x_va, y_tr, y_va = train_test_split(x, y, test_size=0.2, stratify=y, random_state=0)
     rng = np.random.default_rng(0)
     x_tr = np.concatenate([x_tr, augment(x_tr, rng), augment(x_tr, rng)])
@@ -66,7 +76,7 @@ def main() -> None:
             keras.layers.Dropout(0.3),
             keras.layers.Dense(64, activation="relu"),
             keras.layers.Dropout(0.2),
-            keras.layers.Dense(len(LABELS), activation="softmax"),
+            keras.layers.Dense(len(labels), activation="softmax"),
         ]
     )
     model.compile(optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
@@ -89,7 +99,7 @@ def main() -> None:
     model.save(out / "gesture_mlp.keras")
     tflite = tf.lite.TFLiteConverter.from_keras_model(model).convert()
     (out / "gesture_mlp.tflite").write_bytes(tflite)
-    (out / "labels.txt").write_text("\n".join(LABELS) + "\n")
+    (out / "labels.txt").write_text("\n".join(labels) + "\n")
     print(f"wrote {out / 'gesture_mlp.tflite'} ({len(tflite)} bytes)")
 
 

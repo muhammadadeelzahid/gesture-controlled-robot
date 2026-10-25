@@ -1,8 +1,11 @@
 """Collect labelled, normalised hand landmarks into a CSV.
 
-Usage (webcam):  python ml/collect_data.py --out ml/data/session1.csv
-Keys: 0-5 = record current frame with that label (hold to burst), q = quit.
+Webcam:  python ml/collect_data.py --out ml/data/session1.csv
+  Keys 0-5 record the current frame with that label (hold to burst), q quits.
   0 open_palm  1 fist  2 pointing_up  3 victory  4 thumb_up  5 thumb_down
+
+Images:  python ml/collect_data.py --out ml/data/images.csv --images DIR
+  DIR holds one sub-directory per label (open_palm/, fist/, ...) with images in it.
 """
 
 from __future__ import annotations
@@ -24,8 +27,13 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", required=True)
     ap.add_argument("--camera", type=int, default=0)
+    ap.add_argument("--images", help="directory with one sub-directory per label")
     ap.add_argument("--model", default=str(MODELS_DIR / "hand_landmarker.task"))
     args = ap.parse_args()
+
+    if args.images:
+        from_images(args)
+        return
 
     options = vision.HandLandmarkerOptions(
         base_options=mp_python.BaseOptions(model_asset_path=args.model),
@@ -82,6 +90,38 @@ def main() -> None:
 
     cap.release()
     cv2.destroyAllWindows()
+    print(counts)
+
+
+def from_images(args) -> None:
+    """Run the landmarker once per image; the label is the parent directory name."""
+    from pathlib import Path
+
+    options = vision.HandLandmarkerOptions(
+        base_options=mp_python.BaseOptions(model_asset_path=args.model),
+        running_mode=vision.RunningMode.IMAGE,
+        num_hands=1,
+    )
+    landmarker = vision.HandLandmarker.create_from_options(options)
+    counts = {label: 0 for label in LABELS}
+    with open(args.out, "a", newline="") as f:
+        writer = csv.writer(f)
+        for path in sorted(Path(args.images).rglob("*")):
+            label = path.parent.name
+            if label not in LABELS or path.suffix.lower() not in {".jpg", ".jpeg", ".png"}:
+                continue
+            bgr = cv2.imread(str(path))
+            if bgr is None:
+                continue
+            rgb = cv2.cvtColor(cv2.flip(bgr, 1), cv2.COLOR_BGR2RGB)
+            result = landmarker.detect(mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb))
+            if not result.hand_landmarks:
+                print(f"no hand in {path}")
+                continue
+            handed = result.handedness[0][0].category_name if result.handedness else "Right"
+            pts = np.array([[p.x, p.y, p.z] for p in result.hand_landmarks[0]], dtype=np.float32)
+            writer.writerow([label, *normalize_landmarks(pts, handed).tolist()])
+            counts[label] += 1
     print(counts)
 
 

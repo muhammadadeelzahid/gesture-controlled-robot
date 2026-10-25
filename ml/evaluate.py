@@ -10,7 +10,7 @@ import argparse
 import numpy as np
 from ai_edge_litert.interpreter import Interpreter
 
-from common import LABELS, MODELS_DIR
+from common import MODELS_DIR
 from train import load
 
 
@@ -18,9 +18,11 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("csv", nargs="+")
     ap.add_argument("--model", default=str(MODELS_DIR / "gesture_mlp.tflite"))
+    ap.add_argument("--labels", default=str(MODELS_DIR / "labels.txt"))
     args = ap.parse_args()
 
-    x, y = load(args.csv)
+    labels = [line.strip() for line in open(args.labels) if line.strip()]
+    x, y = load(args.csv, labels)
     interp = Interpreter(model_path=args.model)
     interp.allocate_tensors()
     i_in = interp.get_input_details()[0]["index"]
@@ -32,7 +34,7 @@ def main() -> None:
         pred.append(int(np.argmax(interp.get_tensor(i_out)[0])))
     pred = np.asarray(pred)
     print(f"accuracy: {(pred == y).mean():.4f} on {len(y)} samples")
-    for i, label in enumerate(LABELS):
+    for i, label in enumerate(labels):
         m = y == i
         if m.any():
             print(f"  {label:12s} {(pred[m] == i).mean():.3f} (n={m.sum()})")
