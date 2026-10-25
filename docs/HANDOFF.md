@@ -252,9 +252,9 @@ Check the cluster's own docs for module names, partitions and accounts.
 ## 10. Conventions and gotchas
 
 - **Word-check hook.** `.git/hooks/wordcheck.sh` runs on commits and rejects certain words,
-  arrows, emoji and em-dashes in files and commit messages. Hooks do not travel with a clone
-  or the zip's working tree; copy `.git/hooks/wordcheck.sh` if you want it on the new
-  machine. Run it by hand on changed files before committing.
+  arrows, emoji and em-dashes in files and commit messages. The handoff zip carries `.git`
+  with the hooks in place; a fresh `git clone` does not, so copy `.git/hooks/` across in that
+  case. Run it by hand on changed files before committing.
 - **Lint.** `ruff check . && ruff format --check .` must pass; CI enforces it.
 - **numpy below 2 in the runtime image.** `constraints.txt` holds numpy at the Ubuntu 24.04
   version because cv_bridge and the other ROS Python bindings are built against it. Any
