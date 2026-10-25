@@ -7,7 +7,7 @@ x-common: &common
     args:
       UID: ${UID:-1000}
       GID: ${GID:-1000}
-  image: gesture_controlled_robot:jazzy
+  image: gesture-controlled-robot:jazzy
   network_mode: host
   ipc: host
   working_dir: /ws

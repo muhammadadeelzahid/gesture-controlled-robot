@@ -17,12 +17,8 @@ from launch_ros.actions import Node
 def generate_launch_description():
     control_share = get_package_share_directory("gesture_control")
     recognition_share = get_package_share_directory("gesture_recognition")
-    recognizer = LaunchConfiguration("recognizer")
     return LaunchDescription(
         [
-            DeclareLaunchArgument(
-                "recognizer", default_value="mediapipe", description="mediapipe | custom"
-            ),
             DeclareLaunchArgument("sim", default_value="true"),
             DeclareLaunchArgument("source", default_value="camera", description="camera | images"),
             DeclareLaunchArgument(
@@ -56,7 +52,6 @@ def generate_launch_description():
                 PythonLaunchDescriptionSource(
                     os.path.join(recognition_share, "launch", "recognition.launch.py")
                 ),
-                launch_arguments={"recognizer": recognizer}.items(),
             ),
             Node(
                 package="gesture_control",

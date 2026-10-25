@@ -1,5 +1,5 @@
 {
-  "name": "gesture_controlled_robot (ROS 2 Jazzy)",
+  "name": "gesture-controlled-robot (ROS 2 Jazzy)",
   "dockerComposeFile": ["../docker/docker-compose.yml"],
   "service": "dev",
   "workspaceFolder": "/ws",

@@ -3,7 +3,7 @@
 ```
 +----------+  /image_raw   +----------------------+ /hand/landmarks +--------------------------+ /gesture +------------------------+ /cmd_vel +--------------+
 | usb_cam  +-------------->| hand_landmarker_node +---------------->| gesture_classifier_node  +--------->| gesture_to_cmd_vel_node+--------->| TurtleBot3   |
-| (webcam) |               | MediaPipe HandLandm. |                 | LiteRT MLP | MP Gesture  |          | deadman · ramp · clamp |          | Gazebo (gz)  |
+| (webcam) |               | MediaPipe HandLandm. |                 | MediaPipe Gesture task   |          | deadman · ramp · clamp |          | Gazebo (gz)  |
 +----------+               +----------+-----------+                 +--------------------------+          +------------------------+          +--------------+
                                       | /hand/image_annotated (debug, only when subscribed)
 ```

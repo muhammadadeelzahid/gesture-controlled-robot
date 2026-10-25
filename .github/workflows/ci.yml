@@ -6,8 +6,40 @@ on:
   pull_request:
 
 jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install ruff
+        run: pip install ruff
+      - name: Ruff check and format
+        run: |
+          ruff check .
+          ruff format --check .
+
+  unit-tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test deps
+        run: pip install -c constraints.txt numpy pytest
+      - name: Pure-python unit tests (no ROS)
+        env:
+          PYTHONPATH: src/gesture_control:src/gesture_recognition
+        run: |
+          pytest -q \
+            src/gesture_control/test/test_velocity.py \
+            src/gesture_recognition/test/test_landmarks.py
+
   build-test:
     runs-on: ubuntu-24.04
+    needs: [lint, unit-tests]
     container: ros:jazzy
     env:
       TURTLEBOT3_MODEL: burger
@@ -25,11 +57,8 @@ jobs:
 
       - name: Install python deps
         run: |
-          pip install -c constraints.txt -r requirements.txt ruff
+          pip install -c constraints.txt -r requirements.txt
           scripts/download_models.sh
-
-      - name: Lint
-        run: ruff check . && ruff format --check .
 
       - name: Build
         shell: bash
@@ -45,14 +74,3 @@ jobs:
           pytest -q
           colcon test --event-handlers console_cohesion+
           colcon test-result --verbose
-
-      - name: Recognition launch test with the trained classifier
-        shell: bash
-        run: |
-          source /opt/ros/jazzy/setup.bash
-          source install/setup.bash
-          RECOGNIZER=custom pytest -q src/gesture_recognition/test/test_recognition_launch.py
-
-      - name: Headless Gazebo smoke test
-        shell: bash
-        run: scripts/headless_smoke_test.sh

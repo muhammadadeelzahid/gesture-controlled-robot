@@ -1,7 +1,6 @@
 # Test images
 
-Used by the recognition launch test and as the seed set for `ml/collect_data.py --images`.
-File name = expected label.
+Used by the recognition launch test. File name = expected label.
 
 | File | Source | License |
 |---|---|---|

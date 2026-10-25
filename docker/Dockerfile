@@ -1,4 +1,4 @@
-# ROS 2 Jazzy + Gazebo Harmonic + TurtleBot3 + MediaPipe/LiteRT runtime.
+# ROS 2 Jazzy + Gazebo Harmonic + TurtleBot3 + MediaPipe runtime.
 # Multi-arch base: builds and runs on arm64 and x86_64.
 FROM ros:jazzy
 

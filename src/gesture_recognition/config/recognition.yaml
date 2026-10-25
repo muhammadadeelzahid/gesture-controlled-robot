@@ -9,9 +9,7 @@ hand_landmarker_node:
 
 gesture_classifier_node:
   ros__parameters:
-    recognizer: mediapipe      # mediapipe | custom
-    model_path: ""             # custom: <share>/models/gesture_mlp.tflite ; mediapipe: gesture_recognizer.task
-    labels_path: ""            # custom only
+    model_path: ""             # empty -> <share>/models/gesture_recognizer.task
     window: 7                  # majority vote window (frames)
     min_votes: 5
     min_confidence: 0.6        # MediaPipe gesture scores on real frames sit around 0.6 to 0.9

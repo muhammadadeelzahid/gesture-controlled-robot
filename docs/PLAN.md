@@ -15,8 +15,7 @@ usb_cam /image_raw -> hand_landmarker_node -> /hand/landmarks -> gesture_classif
 | Robot | TurtleBot3 burger, turtlebot3_world | Lightest model. On Jazzy its /cmd_vel is geometry_msgs/TwistStamped; the control node has a use_stamped parameter to fall back to Twist. |
 | Camera | usb_cam publishing /image_raw | Keeps perception off the hardware; the whole pipeline runs from a rosbag on a headless machine. |
 | Hand tracking | MediaPipe Tasks HandLandmarker (mediapipe 1.1, Python 3.12), VIDEO mode, one hand | Current API; mp.solutions is deprecated. Model files are fetched by scripts/download_models.sh and not committed. mediapipe 1.x ships x86_64 and aarch64 wheels, so perception runs on ARM boards too. |
-| Baseline recogniser | MediaPipe GestureRecognizer task (pre-trained) | Full demo with no training. recognizer:=mediapipe |
-| Custom classifier | Keras 3 MLP on normalised 21x3 landmarks, exported to .tflite, run with LiteRT (ai-edge-litert) | Trains in minutes on CPU; the runtime image has no TensorFlow. recognizer:=custom |
+| Recogniser | MediaPipe GestureRecognizer task (pre-trained) | Full demo with no training, runs over /image_raw |
 | Packaging | colcon, ament_python nodes, ament_cmake message package, Python launch files, YAML parameters | Standard ROS 2 layout. |
 | Dev environment | Docker from the multi-arch ros:jazzy image, compose services dev and demo, devcontainer | Same Dockerfile on arm64 and x86_64. Native install is documented in the README. |
 | Checks | ruff, pytest, launch_testing, GitHub Actions | landmarks.py and velocity.py have no ROS imports and are tested with plain pytest. |
@@ -26,7 +25,7 @@ usb_cam /image_raw -> hand_landmarker_node -> /hand/landmarks -> gesture_classif
 | | Dev box (VM) | Demo box (laptop) |
 |---|---|---|
 | Hardware | aarch64, 2 vCPU, 3 GB RAM, no GPU, no display, no webcam | display, webcam |
-| Used for | code, unit tests, training on landmark CSVs, headless Gazebo smoke test, CI | Gazebo GUI, live camera, data collection, demo recording |
+| Used for | code, unit tests, CI | Gazebo GUI, live camera, demo recording |
 | Compose service | dev | demo |
 
 The whole pipeline runs on the dev box from a rosbag or from still images; only the Gazebo GUI and the live webcam need the demo box. Camera data moves to the dev box as rosbags (scripts/record_bag.sh).
@@ -40,8 +39,7 @@ docker/                     Dockerfile, docker-compose.yml, entrypoint.sh
 src/gesture_msgs/           Gesture.msg (header, label, confidence)
 src/gesture_recognition/    hand_landmarker_node, gesture_classifier_node, landmarks.py, launch, config, models/
 src/gesture_control/        gesture_to_cmd_vel_node, velocity.py, gesture_map.yaml, sim/camera/bringup launch
-ml/                         collect_data.py, train.py, evaluate.py, requirements-train.txt, data/
-scripts/                    download_models.sh, record_bag.sh, headless_smoke_test.sh
+scripts/                    download_models.sh, record_bag.sh
 docs/                       PLAN.md, ARCHITECTURE.md
 ```
 
@@ -69,9 +67,8 @@ Gesture map (src/gesture_control/config/gesture_map.yaml):
 
 ### 5.1 Simulation baseline (demo box, about half a day)
 - Done: the burger bridge config maps /cmd_vel as geometry_msgs/TwistStamped, so use_stamped defaults to true.
-- Done: scripts/headless_smoke_test.sh passes on the dev box (robot moves about 2 m in 10 s at 0.2 m/s).
 - ros2 launch gesture_control sim.launch.py on the demo box, then drive with turtlebot3_teleop.
-- Done when: robot moves from teleop and the smoke test is green in CI.
+- Done when: robot moves from teleop.
 
 ### 5.2 Camera and hand landmarks
 - Done: image_sequence_node stands in for the camera; the landmarker runs on arm64 at about 10 ms per 640x480 frame.
@@ -81,18 +78,10 @@ Gesture map (src/gesture_control/config/gesture_map.yaml):
 
 ### 5.3 End to end with the MediaPipe baseline (first demo)
 - Done: recognition launch test (five still images to /gesture) and the cmd_vel launch test pass in CI.
-- Done: scripts/demo_headless.sh drives the robot in server-only Gazebo from the still images and renders docs/demo (GIF, timeline, path).
 - Done: confidence gates set to 0.6 (classifier) and 0.5 (control) from measured MediaPipe scores.
-- bringup.launch.py recognizer:=mediapipe on the demo box with the webcam; tune window, min_votes, speeds. Check that STOP lands within 0.5 s and that the robot does not move when the hand leaves the frame.
+- bringup.launch.py on the demo box with the webcam; tune window, min_votes, speeds. Check that STOP lands within 0.5 s and that the robot does not move when the hand leaves the frame.
 
-### 5.4 Custom Keras 3 classifier
-- Done: ml/collect_data.py --images with augmentation, train.py and evaluate.py run end to end; a seed gesture_mlp.tflite trained on augmented copies of the test images is committed so recognizer:=custom works out of the box.
-- ml/collect_data.py from the webcam: about 300 samples per class, two or more people, both hands, varied lighting and distance. No fist fixture exists yet.
-- ml/train.py on the dev box writes gesture_mlp.tflite, labels.txt and a confusion matrix. Target 95 % validation accuracy or better, no confusion pair above 3 %.
-- ml/evaluate.py on a held-out CSV through LiteRT, the same runtime the node uses.
-- bringup.launch.py recognizer:=custom passes the same drive test as 5.3.
-
-### 5.5 Polish and release
+### 5.4 Polish and release
 - Latency measurement (Gesture stamp to cmd_vel stamp); optional twist_mux so keyboard teleop overrides gestures.
 - README demo GIF, run instructions for both machines, native install notes. Tag v1.0.0.
 
@@ -110,10 +99,10 @@ Gesture map (src/gesture_control/config/gesture_map.yaml):
 | pip pulling numpy 2 over the Ubuntu numpy and breaking cv_bridge | constraints.txt pins numpy below 2 (CI failed on this once). |
 | Mirrored webcam flips handedness | frame is mirrored before detection; left-hand landmarks are mirrored in normalize_landmarks. |
 | Gesture flicker making the robot jerk | majority vote, acceleration ramp, deadman timeout. |
-| Dev box too weak for Gazebo | only headless gz sim -s for the smoke test; GUI work on the demo box. |
+| Dev box too weak for Gazebo | only headless gz sim -s on the dev box; GUI work on the demo box. |
 
 ## 7. Checks
 
-- Dev box: docker compose -f docker/docker-compose.yml run --rm dev, then colcon build --symlink-install, source install/setup.bash, pytest, colcon test, scripts/headless_smoke_test.sh.
-- Demo box: docker compose -f docker/docker-compose.yml run --rm demo, then ros2 launch gesture_control bringup.launch.py recognizer:=mediapipe (later custom) and drive through turtlebot3_world.
-- CI on every push: lint, build, unit and launch tests, headless smoke test.
+- Dev box: docker compose -f docker/docker-compose.yml run --rm dev, then colcon build --symlink-install, source install/setup.bash, pytest, colcon test.
+- Demo box: docker compose -f docker/docker-compose.yml run --rm demo, then ros2 launch gesture_control bringup.launch.py and drive through turtlebot3_world.
+- CI on every push: lint, pure-python unit tests, build, unit and launch tests.

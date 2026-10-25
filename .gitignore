@@ -12,12 +12,6 @@ build/
 install/
 log/
 
-# ML artefacts and data
-ml/data/raw/
-ml/runs/
-*.h5
-*.keras
-
 # Downloaded MediaPipe models (see scripts/download_models.sh)
 src/gesture_recognition/models/*.task
 

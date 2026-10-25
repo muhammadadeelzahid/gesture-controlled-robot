@@ -14,10 +14,7 @@ setup(
         ("share/" + package_name + "/launch", glob("launch/*.launch.py")),
         ("share/" + package_name + "/config", glob("config/*.yaml")),
         ("share/" + package_name + "/test/images", glob("test/images/*.jpg")),
-        (
-            "share/" + package_name + "/models",
-            glob("models/*.task") + glob("models/*.tflite") + glob("models/*.txt"),
-        ),
+        ("share/" + package_name + "/models", glob("models/*.task")),
     ],
     install_requires=["setuptools"],
     tests_require=["pytest"],

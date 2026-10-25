@@ -49,7 +49,7 @@ def generate_test_description():
         launch_ros.actions.Node(
             package="gesture_recognition",
             executable="gesture_classifier_node",
-            parameters=[params, {"recognizer": os.environ.get("RECOGNIZER", "mediapipe")}],
+            parameters=[params],
         ),
     ]
     return launch.LaunchDescription([*nodes, launch_testing.actions.ReadyToTest()]), {}
