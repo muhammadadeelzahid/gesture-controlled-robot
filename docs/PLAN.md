@@ -68,10 +68,10 @@ Gesture map (src/gesture_control/config/gesture_map.yaml):
 ## 5. Work plan
 
 ### 5.1 Simulation baseline (demo box, about half a day)
-- ros2 launch gesture_control sim.launch.py, then drive with turtlebot3_teleop.
-- Read the TurtleBot3 Gazebo bridge config to confirm the /cmd_vel topic and type; set the use_stamped default to match.
-- Get scripts/headless_smoke_test.sh passing on the dev box and in CI.
-- Done when: robot moves from teleop and the smoke test is green.
+- Done: the burger bridge config maps /cmd_vel as geometry_msgs/TwistStamped, so use_stamped defaults to true.
+- Done: scripts/headless_smoke_test.sh passes on the dev box (robot moves about 2 m in 10 s at 0.2 m/s).
+- ros2 launch gesture_control sim.launch.py on the demo box, then drive with turtlebot3_teleop.
+- Done when: robot moves from teleop and the smoke test is green in CI.
 
 ### 5.2 Camera and hand landmarks
 - camera.launch.py on the demo box; record a two minute bag of varied gestures and copy it to the dev box.
