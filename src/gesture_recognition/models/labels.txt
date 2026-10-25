@@ -1,0 +1,5 @@
+open_palm
+pointing_up
+victory
+thumb_up
+thumb_down

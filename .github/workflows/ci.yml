@@ -46,6 +46,13 @@ jobs:
           colcon test --event-handlers console_cohesion+
           colcon test-result --verbose
 
+      - name: Recognition launch test with the trained classifier
+        shell: bash
+        run: |
+          source /opt/ros/jazzy/setup.bash
+          source install/setup.bash
+          RECOGNIZER=custom pytest -q src/gesture_recognition/test/test_recognition_launch.py
+
       - name: Headless Gazebo smoke test
         shell: bash
         run: scripts/headless_smoke_test.sh
