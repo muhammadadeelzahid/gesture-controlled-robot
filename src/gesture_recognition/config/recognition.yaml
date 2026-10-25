@@ -1,0 +1,17 @@
+hand_landmarker_node:
+  ros__parameters:
+    model_path: ""             # empty -> <share>/models/hand_landmarker.task
+    mirror: true               # flip the webcam horizontally so it behaves like a mirror
+    num_hands: 1
+    min_detection_confidence: 0.5
+    min_tracking_confidence: 0.5
+    publish_annotated: true
+
+gesture_classifier_node:
+  ros__parameters:
+    recognizer: mediapipe      # mediapipe | custom
+    model_path: ""             # custom: <share>/models/gesture_mlp.tflite ; mediapipe: gesture_recognizer.task
+    labels_path: ""            # custom only
+    window: 7                  # majority vote window (frames)
+    min_votes: 5
+    min_confidence: 0.8
