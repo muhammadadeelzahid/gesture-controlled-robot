@@ -1,0 +1,51 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-24.04
+    container: ros:jazzy
+    env:
+      TURTLEBOT3_MODEL: burger
+      PIP_BREAK_SYSTEM_PACKAGES: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install apt deps
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            ros-jazzy-ros-gz ros-jazzy-turtlebot3-gazebo ros-jazzy-cv-bridge ros-jazzy-usb-cam \
+            ros-jazzy-twist-mux ros-jazzy-launch-testing ros-jazzy-launch-testing-ros \
+            python3-pip python3-pytest python3-colcon-common-extensions libportaudio2 libgl1 curl
+
+      - name: Install python deps
+        run: |
+          pip install -c constraints.txt -r requirements.txt ruff
+          scripts/download_models.sh
+
+      - name: Lint
+        run: ruff check . && ruff format --check .
+
+      - name: Build
+        shell: bash
+        run: |
+          source /opt/ros/jazzy/setup.bash
+          colcon build --symlink-install --event-handlers console_cohesion+
+
+      - name: Unit and launch tests
+        shell: bash
+        run: |
+          source /opt/ros/jazzy/setup.bash
+          source install/setup.bash
+          pytest -q
+          colcon test --event-handlers console_cohesion+
+          colcon test-result --verbose
+
+      - name: Headless Gazebo smoke test
+        shell: bash
+        run: scripts/headless_smoke_test.sh
