@@ -74,17 +74,20 @@ Gesture map (src/gesture_control/config/gesture_map.yaml):
 - Done when: robot moves from teleop and the smoke test is green in CI.
 
 ### 5.2 Camera and hand landmarks
+- Done: image_sequence_node stands in for the camera; the landmarker runs on arm64 at about 10 ms per 640x480 frame.
 - camera.launch.py on the demo box; record a two minute bag of varied gestures and copy it to the dev box.
 - hand_landmarker_node overlay visible in rqt_image_view at 20 FPS or better on the demo box.
 - Done when: ros2 topic hz /hand/landmarks matches the camera rate.
 
 ### 5.3 End to end with the MediaPipe baseline (first demo)
-- bringup.launch.py recognizer:=mediapipe on the demo box.
-- Tune window, min_votes, min_confidence and speeds. Check that STOP lands within 0.5 s and that the robot does not move when the hand leaves the frame.
-- launch_testing for the cmd_vel node passes in CI.
+- Done: recognition launch test (five still images to /gesture) and the cmd_vel launch test pass in CI.
+- Done: scripts/demo_headless.sh drives the robot in server-only Gazebo from the still images and renders docs/demo (GIF, timeline, path).
+- Done: confidence gates set to 0.6 (classifier) and 0.5 (control) from measured MediaPipe scores.
+- bringup.launch.py recognizer:=mediapipe on the demo box with the webcam; tune window, min_votes, speeds. Check that STOP lands within 0.5 s and that the robot does not move when the hand leaves the frame.
 
 ### 5.4 Custom Keras 3 classifier
-- ml/collect_data.py: about 300 samples per class, two or more people, both hands, varied lighting and distance.
+- Done: ml/collect_data.py --images with augmentation, train.py and evaluate.py run end to end; a seed gesture_mlp.tflite trained on augmented copies of the test images is committed so recognizer:=custom works out of the box.
+- ml/collect_data.py from the webcam: about 300 samples per class, two or more people, both hands, varied lighting and distance. No fist fixture exists yet.
 - ml/train.py on the dev box writes gesture_mlp.tflite, labels.txt and a confusion matrix. Target 95 % validation accuracy or better, no confusion pair above 3 %.
 - ml/evaluate.py on a held-out CSV through LiteRT, the same runtime the node uses.
 - bringup.launch.py recognizer:=custom passes the same drive test as 5.3.
