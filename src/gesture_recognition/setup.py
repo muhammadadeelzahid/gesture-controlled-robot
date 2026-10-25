@@ -13,6 +13,7 @@ setup(
         ("share/" + package_name, ["package.xml"]),
         ("share/" + package_name + "/launch", glob("launch/*.launch.py")),
         ("share/" + package_name + "/config", glob("config/*.yaml")),
+        ("share/" + package_name + "/test/images", glob("test/images/*.jpg")),
         (
             "share/" + package_name + "/models",
             glob("models/*.task") + glob("models/*.tflite") + glob("models/*.txt"),
@@ -29,6 +30,7 @@ setup(
         "console_scripts": [
             "hand_landmarker_node = gesture_recognition.hand_landmarker_node:main",
             "gesture_classifier_node = gesture_recognition.gesture_classifier_node:main",
+            "image_sequence_node = gesture_recognition.image_sequence_node:main",
         ],
     },
 )
