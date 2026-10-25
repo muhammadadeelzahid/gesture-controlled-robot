@@ -1,5 +1,5 @@
 # ROS 2 Jazzy + Gazebo Harmonic + TurtleBot3 + MediaPipe/LiteRT runtime.
-# Multi-arch base so the same file builds on arm64 (dev VM) and x86_64 (laptop, CI).
+# Multi-arch base: builds and runs on arm64 and x86_64.
 FROM ros:jazzy
 
 ENV DEBIAN_FRONTEND=noninteractive \

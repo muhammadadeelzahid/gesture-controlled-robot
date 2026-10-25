@@ -14,7 +14,7 @@ usb_cam /image_raw -> hand_landmarker_node -> /hand/landmarks -> gesture_classif
 | Simulator | Gazebo Harmonic via ros_gz | Paired with Jazzy; turtlebot3_gazebo 2.3.x targets it. |
 | Robot | TurtleBot3 burger, turtlebot3_world | Lightest model. On Jazzy its /cmd_vel is geometry_msgs/TwistStamped; the control node has a use_stamped parameter to fall back to Twist. |
 | Camera | usb_cam publishing /image_raw | Keeps perception off the hardware; the whole pipeline runs from a rosbag on a headless machine. |
-| Hand tracking | MediaPipe Tasks HandLandmarker (mediapipe 0.10.x, Python 3.12), VIDEO mode, one hand | Current API; mp.solutions is deprecated. Model files are fetched by scripts/download_models.sh and not committed. mediapipe only ships x86_64 Linux wheels. |
+| Hand tracking | MediaPipe Tasks HandLandmarker (mediapipe 1.1, Python 3.12), VIDEO mode, one hand | Current API; mp.solutions is deprecated. Model files are fetched by scripts/download_models.sh and not committed. mediapipe 1.x ships x86_64 and aarch64 wheels, so perception runs on ARM boards too. |
 | Baseline recogniser | MediaPipe GestureRecognizer task (pre-trained) | Full demo with no training. recognizer:=mediapipe |
 | Custom classifier | Keras 3 MLP on normalised 21x3 landmarks, exported to .tflite, run with LiteRT (ai-edge-litert) | Trains in minutes on CPU; the runtime image has no TensorFlow. recognizer:=custom |
 | Packaging | colcon, ament_python nodes, ament_cmake message package, Python launch files, YAML parameters | Standard ROS 2 layout. |
@@ -25,11 +25,11 @@ usb_cam /image_raw -> hand_landmarker_node -> /hand/landmarks -> gesture_classif
 
 | | Dev box (VM) | Demo box (laptop) |
 |---|---|---|
-| Hardware | aarch64, 2 vCPU, 3 GB RAM, no GPU, no display, no webcam | x86_64, display, webcam |
+| Hardware | aarch64, 2 vCPU, 3 GB RAM, no GPU, no display, no webcam | display, webcam |
 | Used for | code, unit tests, training on landmark CSVs, headless Gazebo smoke test, CI | Gazebo GUI, live camera, data collection, demo recording |
 | Compose service | dev | demo |
 
-mediapipe does not install on the dev box (no aarch64 wheel), so the landmarker and the mediapipe recognizer only run on the demo box. Camera data moves to the dev box as rosbags (scripts/record_bag.sh).
+The whole pipeline runs on the dev box from a rosbag or from still images; only the Gazebo GUI and the live webcam need the demo box. Camera data moves to the dev box as rosbags (scripts/record_bag.sh).
 
 ## 3. Layout
 

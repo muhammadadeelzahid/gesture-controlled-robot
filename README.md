@@ -10,6 +10,7 @@ usb_cam -> hand_landmarker_node -> gesture_classifier_node -> gesture_to_cmd_vel
 
 **Stack:** ROS 2 Jazzy Jalisco (LTS), Gazebo Harmonic, TurtleBot3 burger, MediaPipe Tasks `HandLandmarker`,
 Keras 3 training -> `.tflite` inference with LiteRT (`ai-edge-litert`), OpenCV, Docker devcontainer.
+Runs on x86_64 and arm64 (mediapipe 1.x has wheels for both).
 
 See [docs/PLAN.md](docs/PLAN.md) for the full design, phases and rationale.
 
