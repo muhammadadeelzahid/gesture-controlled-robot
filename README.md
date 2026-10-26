@@ -95,9 +95,7 @@ Edit `src/gesture_control/config/gesture_map.yaml` to change it. The control nod
 
 ## Status
 
-CI on x86_64 covers lint, the pure-python unit tests, a colcon build, and the launch tests over the
-still-image fixtures. Still to do with a webcam and a display: a fist image fixture and threshold
-tuning on live frames.
+CI on x86_64 covers lint, the pure-python unit tests, a colcon build, and the launch tests.
 
 ## Native install on Ubuntu 24.04
 
