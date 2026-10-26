@@ -22,7 +22,6 @@ from gesture_msgs.msg import Gesture
 SHARE = get_package_share_directory("gesture_recognition")
 IMAGES = os.path.join(SHARE, "test", "images")
 HOLD_S = 4.0
-# fist has no image fixture yet, see test/images/SOURCES.md
 EXPECTED = {
     "open_palm": "open_palm",
     "pointing_up": "pointing_up",
