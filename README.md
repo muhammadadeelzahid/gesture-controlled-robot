@@ -24,30 +24,20 @@ skip the Gazebo client, and `source:=images images:=<dir>` to replay still image
 
 ## Run from a webcam
 
-`robot.launch.py` runs the live pipeline with no simulator: webcam to gesture to `/cmd_vel`. Check
-it from another shell with `ros2 topic echo /cmd_vel` and `ros2 topic hz /gesture`. For a robot that
-expects a plain `geometry_msgs/Twist`, add `use_stamped:=false`.
+`robot.launch.py` runs the live pipeline with no simulator. Verify with `ros2 topic echo /cmd_vel`.
+Add `overlay:=true` for the `/hand/image_annotated` skeleton view, `use_stamped:=false` for plain
+`Twist`.
 
-### On an Ubuntu computer
-
-The Docker demo service already passes the webcam and the display:
+### Ubuntu computer
 
 ```bash
 xhost +local:docker
 docker compose -f docker/docker-compose.yml run --rm demo
-# inside the container:
 colcon build --symlink-install && source install/setup.bash
 ros2 launch gesture_control robot.launch.py overlay:=true
-ros2 run rqt_image_view rqt_image_view /hand/image_annotated   # skeleton view
 ```
 
-`overlay:=true` runs `hand_landmarker_node` to draw the hand skeleton; leave it off to save CPU.
-A native install works the same way, see below.
-
-### On a Raspberry Pi 4
-
-Flash Ubuntu 24.04 Server (64-bit) and install ROS 2 Jazzy with the perception and control
-dependencies only, no Gazebo:
+### Raspberry Pi 4 (Ubuntu 24.04 Server, arm64)
 
 ```bash
 sudo apt install ros-jazzy-ros-base ros-jazzy-usb-cam ros-jazzy-cv-bridge \
@@ -58,10 +48,8 @@ colcon build --symlink-install --parallel-workers 1 && source install/setup.bash
 ros2 launch gesture_control robot.launch.py width:=320 height:=240 framerate:=15
 ```
 
-The Pi 4 CPU is modest, so keep the overlay off and the resolution low; expect a handful of frames
-per second. If the classifier falls behind, lower `framerate:=10` or reduce `window` and `min_votes`
-in `src/gesture_recognition/config/recognition.yaml`. Use a heatsink or fan, since the Pi 4 throttles
-under sustained load. If the camera has no MJPEG mode, add `pixel_format:=yuyv`.
+Knobs if it lags: `framerate:=10`, `pixel_format:=yuyv`, or lower `window`/`min_votes` in
+`src/gesture_recognition/config/recognition.yaml`.
 
 ## Architecture
 
@@ -122,8 +110,7 @@ scripts/                    download_models.sh, record_bag.sh
 | thumb_up | turn right | 0 | -0.6 |
 | thumb_down | reverse | -0.10 | 0 |
 
-Edit `src/gesture_control/config/gesture_map.yaml` to change it. The control node zeroes the command
-0.5 s after the last gesture, ramps under an acceleration limit and clamps to the burger's limits.
+Edit `src/gesture_control/config/gesture_map.yaml` to change the mapping.
 
 ## Native install on Ubuntu 24.04
 
