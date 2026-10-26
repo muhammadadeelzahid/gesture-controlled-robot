@@ -19,17 +19,49 @@ colcon build --symlink-install && source install/setup.bash
 pytest                                     # unit and launch tests
 ```
 
-On a machine with a display and a webcam, use the demo service instead:
+`bringup.launch.py` also drives the full stack: `sim:=false` for a real robot, `headless:=true` to
+skip the Gazebo client, and `source:=images images:=<dir>` to replay still images instead of a camera.
+
+## Run from a webcam
+
+`robot.launch.py` runs the live pipeline with no simulator: webcam to gesture to `/cmd_vel`. Check
+it from another shell with `ros2 topic echo /cmd_vel` and `ros2 topic hz /gesture`. For a robot that
+expects a plain `geometry_msgs/Twist`, add `use_stamped:=false`.
+
+### On an Ubuntu computer
+
+The Docker demo service already passes the webcam and the display:
 
 ```bash
 xhost +local:docker
 docker compose -f docker/docker-compose.yml run --rm demo
-ros2 launch gesture_control bringup.launch.py
-ros2 run rqt_image_view rqt_image_view /hand/image_annotated
+# inside the container:
+colcon build --symlink-install && source install/setup.bash
+ros2 launch gesture_control robot.launch.py overlay:=true
+ros2 run rqt_image_view rqt_image_view /hand/image_annotated   # skeleton view
 ```
 
-bringup.launch.py takes a few arguments: `sim:=false` for a real robot, `headless:=true` to skip the
-Gazebo client, and `source:=images images:=<dir>` to replay still images instead of a camera.
+`overlay:=true` runs `hand_landmarker_node` to draw the hand skeleton; leave it off to save CPU.
+A native install works the same way, see below.
+
+### On a Raspberry Pi 4
+
+Flash Ubuntu 24.04 Server (64-bit) and install ROS 2 Jazzy with the perception and control
+dependencies only, no Gazebo:
+
+```bash
+sudo apt install ros-jazzy-ros-base ros-jazzy-usb-cam ros-jazzy-cv-bridge \
+                 ros-jazzy-image-transport python3-colcon-common-extensions v4l-utils
+pip install -c constraints.txt -r requirements.txt --break-system-packages
+scripts/download_models.sh
+colcon build --symlink-install --parallel-workers 1 && source install/setup.bash
+ros2 launch gesture_control robot.launch.py width:=320 height:=240 framerate:=15
+```
+
+The Pi 4 CPU is modest, so keep the overlay off and the resolution low; expect a handful of frames
+per second. If the classifier falls behind, lower `framerate:=10` or reduce `window` and `min_votes`
+in `src/gesture_recognition/config/recognition.yaml`. Use a heatsink or fan, since the Pi 4 throttles
+under sustained load. If the camera has no MJPEG mode, add `pixel_format:=yuyv`.
 
 ## Architecture
 
