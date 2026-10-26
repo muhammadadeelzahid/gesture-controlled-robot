@@ -93,10 +93,6 @@ scripts/                    download_models.sh, record_bag.sh
 Edit `src/gesture_control/config/gesture_map.yaml` to change it. The control node zeroes the command
 0.5 s after the last gesture, ramps under an acceleration limit and clamps to the burger's limits.
 
-## Status
-
-CI on x86_64 covers lint, the pure-python unit tests, a colcon build, and the launch tests.
-
 ## Native install on Ubuntu 24.04
 
 ```bash
