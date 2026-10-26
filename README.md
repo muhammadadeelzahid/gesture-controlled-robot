@@ -6,35 +6,38 @@ Drive a TurtleBot3 in Gazebo Harmonic with hand gestures from a webcam.
 usb_cam -> hand_landmarker_node -> gesture_classifier_node -> gesture_to_cmd_vel_node -> /cmd_vel -> TurtleBot3
 ```
 
-**Stack:** ROS 2 Jazzy Jalisco (LTS), Gazebo Harmonic, TurtleBot3 burger, MediaPipe Tasks
-`HandLandmarker` and `GestureRecognizer`, OpenCV, Docker devcontainer. Runs on x86_64 and
-arm64 (mediapipe 1.x has wheels for both).
+Built on ROS 2 Jazzy Jalisco with Gazebo Harmonic and a TurtleBot3 burger. Perception uses the
+MediaPipe Tasks `HandLandmarker` and `GestureRecognizer` with OpenCV, and the dev environment is a
+Docker devcontainer. mediapipe 1.x ships wheels for both x86_64 and arm64, so the stack runs on
+either.
 
-See [docs/PLAN.md](docs/PLAN.md) for the design, work plan and reasoning, and
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the node and topic layout.
+See [docs/plan.md](docs/plan.md) for the design, work plan and reasoning, and
+[docs/architecture.md](docs/architecture.md) for the node and topic layout.
 
-## Quick start (Docker)
+## Quick start
+
+Everything below runs in the Docker dev image, which needs no camera or display.
 
 ```bash
-scripts/download_models.sh                 # fetch MediaPipe .task models (not in git)
+scripts/download_models.sh                 # fetch the MediaPipe .task models, which are not committed
 docker compose -f docker/docker-compose.yml build
-docker compose -f docker/docker-compose.yml run --rm dev     # headless shell
+docker compose -f docker/docker-compose.yml run --rm dev
 # inside the container:
 colcon build --symlink-install && source install/setup.bash
-pytest                                     # unit tests + launch tests
+pytest                                     # unit and launch tests
 ```
 
-On a machine with a display and webcam:
+On a machine with a display and a webcam, use the demo service instead:
 
 ```bash
 xhost +local:docker
 docker compose -f docker/docker-compose.yml run --rm demo
 ros2 launch gesture_control bringup.launch.py
-ros2 run rqt_image_view rqt_image_view /hand/image_annotated           # optional overlay
+ros2 run rqt_image_view rqt_image_view /hand/image_annotated
 ```
 
-Useful launch arguments for `bringup.launch.py`: `sim:=false` (real robot), `headless:=true`
-(no Gazebo client), `source:=images images:=<dir>` (still images instead of a camera).
+bringup.launch.py takes a few arguments: `sim:=false` for a real robot, `headless:=true` to skip the
+Gazebo client, and `source:=images images:=<dir>` to replay still images instead of a camera.
 
 ## Gesture map
 
@@ -46,17 +49,16 @@ Useful launch arguments for `bringup.launch.py`: `sim:=false` (real robot), `hea
 | thumb_up | turn right | 0 | -0.6 |
 | thumb_down | reverse | -0.10 | 0 |
 
-Edit `src/gesture_control/config/gesture_map.yaml` to change it. The control node zeroes the
-command 0.5 s after the last gesture, ramps with an acceleration limit and clamps to the
-burger's limits.
+Edit `src/gesture_control/config/gesture_map.yaml` to change it. The control node zeroes the command
+0.5 s after the last gesture, ramps under an acceleration limit and clamps to the burger's limits.
 
 ## Status
 
-Verified in CI (x86_64): lint, pure-python unit tests, colcon build, the launch tests and the
-recognition launch test over the still-image fixtures. Still to do with a webcam and a
-display: a fist image fixture and threshold tuning on live frames.
+CI on x86_64 covers lint, the pure-python unit tests, a colcon build, and the launch tests over the
+still-image fixtures. Still to do with a webcam and a display: a fist image fixture and threshold
+tuning on live frames.
 
-## Native install (Ubuntu 24.04)
+## Native install on Ubuntu 24.04
 
 ```bash
 sudo apt install ros-jazzy-desktop-full ros-jazzy-turtlebot3-gazebo ros-jazzy-turtlebot3-teleop \
@@ -66,6 +68,7 @@ pip install -r requirements.txt --break-system-packages
 
 ## Why Jazzy and not Lyrical?
 
-Lyrical Luth (May 2026) is the newest LTS but targets Ubuntu 26.04, and TurtleBot3 has no Lyrical release yet.
-Jazzy is LTS until May 2029, runs natively on Ubuntu 24.04, and has TurtleBot3 2.3.x packages. Migrating later
-means changing the Docker base image and apt prefix; the nodes themselves are plain rclpy.
+Lyrical Luth, from May 2026, is the newest LTS, but it targets Ubuntu 26.04 and TurtleBot3 has no
+Lyrical release yet. Jazzy is an LTS until May 2029, runs natively on Ubuntu 24.04 and has TurtleBot3
+2.3.x packages. Migrating later means changing the Docker base image and apt prefix, while the nodes
+themselves stay plain rclpy.
