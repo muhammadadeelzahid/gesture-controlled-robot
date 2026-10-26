@@ -6,14 +6,6 @@ Drive a TurtleBot3 in Gazebo Harmonic with hand gestures from a webcam.
 usb_cam -> hand_landmarker_node -> gesture_classifier_node -> gesture_to_cmd_vel_node -> /cmd_vel -> TurtleBot3
 ```
 
-Built on ROS 2 Jazzy Jalisco with Gazebo Harmonic and a TurtleBot3 burger. Perception uses the
-MediaPipe Tasks `HandLandmarker` and `GestureRecognizer` with OpenCV, and the dev environment is a
-Docker devcontainer. mediapipe 1.x ships wheels for both x86_64 and arm64, so the stack runs on
-either.
-
-See [docs/plan.md](docs/plan.md) for the design, work plan and reasoning, and
-[docs/architecture.md](docs/architecture.md) for the node and topic layout.
-
 ## Quick start
 
 Everything below runs in the Docker dev image, which needs no camera or display.
@@ -38,6 +30,55 @@ ros2 run rqt_image_view rqt_image_view /hand/image_annotated
 
 bringup.launch.py takes a few arguments: `sim:=false` for a real robot, `headless:=true` to skip the
 Gazebo client, and `source:=images images:=<dir>` to replay still images instead of a camera.
+
+## Architecture
+
+```
++----------+  /image_raw   +----------------------+ /hand/landmarks +--------------------------+ /gesture +------------------------+ /cmd_vel +--------------+
+| usb_cam  +-------------->| hand_landmarker_node +---------------->| gesture_classifier_node  +--------->| gesture_to_cmd_vel_node+--------->| TurtleBot3   |
+| webcam   |               | MediaPipe HandLandm. |                 | MediaPipe Gesture task   |          | deadman · ramp · clamp |          | Gazebo sim   |
++----------+               +----------+-----------+                 +--------------------------+          +------------------------+          +--------------+
+                                      | /hand/image_annotated debug overlay, published only when subscribed
+```
+
+`gesture_msgs` is an ament_cmake package, while `gesture_recognition` and `gesture_control` are
+ament_python. `landmarks.py` and `velocity.py` have no ROS imports, so plain pytest covers them.
+
+## Stack
+
+| Layer | Choice |
+|---|---|
+| ROS | ROS 2 Jazzy Jalisco |
+| Simulator | Gazebo Harmonic via ros_gz |
+| Robot | TurtleBot3 burger, turtlebot3_world |
+| Camera | usb_cam |
+| Hand tracking | MediaPipe Tasks HandLandmarker, mediapipe 1.1 |
+| Recogniser | MediaPipe GestureRecognizer task |
+| Packaging | colcon, ament_python, ament_cmake |
+| Dev environment | Docker from the ros:jazzy image |
+| Checks | ruff, pytest, launch_testing, GitHub Actions |
+
+## Topics
+
+| Topic | Type | Notes |
+|---|---|---|
+| `/image_raw` | `sensor_msgs/Image` | 640x480 at 30 FPS from usb_cam, replayable from a rosbag |
+| `/hand/landmarks` | `std_msgs/Float32MultiArray` | 63 floats: wrist-relative, scale-normalised, left hand mirrored |
+| `/hand/image_annotated` | `sensor_msgs/Image` | skeleton overlay for rqt_image_view, published only when subscribed |
+| `/gesture` | `gesture_msgs/Gesture` | label after a majority vote over 7 frames with at least 5 agreeing, then a confidence gate |
+| `/cmd_vel` | `geometry_msgs/TwistStamped` | the Jazzy TurtleBot3 default; deadman 0.5 s, acceleration ramp, clamped to 0.22 m/s and 2.84 rad/s |
+
+## Layout
+
+```
+.devcontainer/              VS Code devcontainer on the compose dev service
+.github/workflows/ci.yml    lint, unit tests, colcon build and colcon test
+docker/                     Dockerfile, docker-compose.yml, entrypoint.sh
+src/gesture_msgs/           Gesture.msg with header, label and confidence
+src/gesture_recognition/    hand_landmarker_node, gesture_classifier_node, landmarks.py, launch, config, models
+src/gesture_control/        gesture_to_cmd_vel_node, velocity.py, gesture_map.yaml, sim/camera/bringup launch
+scripts/                    download_models.sh, record_bag.sh
+```
 
 ## Gesture map
 
